@@ -13,14 +13,7 @@
 
 ## About
 
-ShopifyHeadless is a production-ready headless commerce framework that decouples your storefront from Shopify's native themes. Built with Next.js 15 and GraphQL, it provides complete control over the customer experience while leveraging Shopify's powerful commerce APIs.
-
-**Key Benefits:**
-- **2-5x faster page loads** compared to Shopify's native themes
-- **Custom checkout flows** with support for 3D Secure, Apple Pay, Google Pay
-- **Multi-vendor marketplace** built-in with vendor portals and commission engine
-- **Real-time sync** via webhooks for inventory, orders, and customers
-- **Edge deployment** ready for Vercel, Cloudflare Workers, and AWS
+ShopifyHeadless is a production-ready headless commerce framework that decouples your storefront from Shopify's native themes. Built with Next.js 15 and GraphQL, it provides complete control over the customer experience while leveraging Shopify's powerful commerce APIs. Perfect for developers building high-performance storefronts, multi-vendor marketplaces, and custom checkout flows that need 2-5x faster page loads than Shopify's native themes.
 
 ## ✨ Features
 
