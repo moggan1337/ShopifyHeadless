@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Auth
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  role          Role      @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  customer Customer?
+  vendor   Vendor?
+  orders   Order[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  CUSTOMER
+  VENDOR
+  ADMIN
+}
+
+// Shopify Customer (linked to User)
+model Customer {
+  id              String   @id @default(cuid())
+  shopifyCustomerId String? @unique
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+  
+  email           String   @unique
+  firstName       String?
+  lastName        String?
+  phone           String?
+  
+  orders          Order[]
+  addresses       Address[]
+  metafields      Metafield[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Vendor (Marketplace seller)
+model Vendor {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  name            String
+  slug            String   @unique
+  description     String?  @db.Text
+  logo            String?
+  banner          String?
+  
+  commissionRate  Float    @default(0.10)
+  commissionTier  String?
+  
+  rating          Float    @default(0)
+  totalSales      Int      @default(0)
+  totalRevenue    Float    @default(0)
+  
+  status          VendorStatus @default(PENDING)
+  
+  products        Product[]
+  payouts         Payout[]
+  disputes        Dispute[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+// Product (linked to Shopify product with additional metadata)
+model Product {
+  id              String   @id @default(cuid())
+  shopifyProductId String  @unique
+  vendorId        String?
+  vendor          Vendor?  @relation(fields: [vendorId], references: [id])
+  
+  title           String
+  handle          String   @unique
+  description     String?  @db.Text
+  
+  isFeatured      Boolean  @default(false)
+  isPublished     Boolean  @default(true)
+  
+  analytics       ProductAnalytics?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ProductAnalytics {
+  id            String   @id @default(cuid())
+  productId     String   @unique
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  views         Int      @default(0)
+  uniqueViews   Int      @default(0)
+  addToCartCount Int     @default(0)
+  purchaseCount  Int     @default(0)
+  revenue       Float    @default(0)
+  
+  lastViewedAt  DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Order (linked to Shopify order)
+model Order {
+  id              String   @id @default(cuid())
+  shopifyOrderId  String?  @unique
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  
+  orderNumber     Int?
+  
+  financialStatus String?
+  fulfillmentStatus String?
+  
+  totalPrice      Float
+  currencyCode    String   @default("USD")
+  subtotalPrice   Float?
+  totalTax        Float?
+  totalShipping   Float?
+  
+  lineItems       OrderLineItem[]
+  
+  shippingAddress Json?
+  billingAddress  Json?
+  
+  vendorPayouts   VendorPayout[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model OrderLineItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  shopifyVariantId String?
+  title         String
+  quantity      Int
+  price         Float
+  sku          String?
+  
+  vendorId      String?
+  vendorPayout  VendorPayout?
+}
+
+model VendorPayout {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  lineItemId    String?
+  lineItem      OrderLineItem? @relation(fields: [lineItemId], references: [id])
+  
+  vendorId      String
+  payoutId      String?
+  payout        Payout?  @relation(fields: [payoutId], references: [id])
+  
+  grossAmount   Float
+  commission    Float
+  netAmount     Float
+  status        PayoutStatus @default(PENDING)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Payout {
+  id            String   @id @default(cuid())
+  vendorId      String
+  vendor        Vendor   @relation(fields: [vendorId], references: [id])
+  
+  amount        Float
+  currencyCode  String   @default("USD")
+  status        PayoutStatus @default(PENDING)
+  
+  orders        VendorPayout[]
+  
+  processedAt   DateTime?
+  paidAt        DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+model Dispute {
+  id            String   @id @default(cuid())
+  shopifyDisputeId String? @unique
+  orderId       String?
+  vendorId      String
+  vendor        Vendor   @relation(fields: [vendorId], references: [id])
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  
+  reason        String
+  status        DisputeStatus @default(OPEN)
+  resolution    String?  @db.Text
+  
+  amount        Float?
+  currencyCode  String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CLOSED
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  isDefault     Boolean  @default(false)
+  address1      String
+  address2      String?
+  city          String
+  province      String?
+  provinceCode  String?
+  country       String
+  countryCode   String
+  zip           String
+  phone         String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Metafield {
+  id            String   @id @default(cuid())
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  namespace     String
+  key           String
+  value         String   @db.Text
+  type          String
+  
+  @@unique([customerId, namespace, key])
+}
+
+// Webhook Log
+model WebhookLog {
+  id            String   @id @default(cuid())
+  topic         String
+  shopDomain    String
+  payload       Json
+  processed     Boolean  @default(false)
+  error         String?  @db.Text
+  
+  createdAt     DateTime @default(now())
+}
+
+// API Rate Limiting
+model RateLimitLog {
+  id            String   @id @default(cuid())
+  identifier    String
+  endpoint      String
+  expiresAt     DateTime
+  
+  @@index([identifier, endpoint])
+  @@index([expiresAt])
+}

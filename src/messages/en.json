@@ -1,0 +1,49 @@
+{
+  "common": {
+    "shop": "Shop",
+    "cart": "Cart",
+    "account": "Account",
+    "search": "Search",
+    "wishlist": "Wishlist",
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "loading": "Loading...",
+    "addToCart": "Add to Cart",
+    "soldOut": "Sold Out",
+    "viewAll": "View All"
+  },
+  "home": {
+    "featuredProducts": "Featured Products",
+    "newArrivals": "New Arrivals",
+    "shopNewArrivals": "Shop New Arrivals",
+    "viewAllProducts": "View All Products"
+  },
+  "product": {
+    "description": "Description",
+    "quantity": "Quantity",
+    "addToCart": "Add to Cart",
+    "addToWishlist": "Add to Wishlist",
+    "share": "Share",
+    "tags": "Tags",
+    "vendor": "Vendor"
+  },
+  "cart": {
+    "yourCart": "Your Cart",
+    "cartEmpty": "Your cart is empty",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "proceedToCheckout": "Proceed to Checkout"
+  },
+  "footer": {
+    "shop": "Shop",
+    "support": "Support",
+    "company": "Company",
+    "legal": "Legal",
+    "contactUs": "Contact Us",
+    "faq": "FAQ",
+    "shippingReturns": "Shipping & Returns",
+    "aboutUs": "About Us",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  }
+}
